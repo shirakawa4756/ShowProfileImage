@@ -9,6 +9,7 @@
 #include "stdafx.h"
 #include <image/image_profilter.hpp>
 
+
 namespace {
 #ifdef _WIN32
 /*******************************************************************************************/// ***
@@ -24,6 +25,27 @@ const wchar_t PATH_SEPARATOR = '\\';
  *
  *************************************************************************************************/
 const wchar_t PATH_SEPARATOR = L'/';
+#endif
+
+
+
+#ifdef _WIN32
+/*******************************************************************************************/// ***
+/**
+ * ディスプレイの画面サイズを取得します
+ *
+ * 複数個のディスプレイが接続されていた場合はどうなるか分かりません．
+ *
+ * @param[out] width 横の解像度
+ * @param[out] height 縦の解像度
+ *
+ *************************************************************************************************/
+cv::Size getDisplaySize()
+{
+    const int width  = GetSystemMetrics(SM_CXSCREEN);
+    const int height = GetSystemMetrics(SM_CYSCREEN);
+    return cv::Size(width, height);
+}
 #endif
 
 
@@ -50,7 +72,7 @@ std::wstring getFilename(const std::wstring &path)
         return path;
     }
 
-    return path.substr(pos, path.size());
+    return path.substr(pos + 1, path.size());
 }
 
 
@@ -72,9 +94,40 @@ std::wstring createCaption(const std::wstring &path)
     std::wstringstream wss;
     wss << L"Profile of "
         << "`"
-        << path.c_str()
+        << getFilename(path.c_str())
         << "'";
     return wss.str();
+}
+
+
+
+/*******************************************************************************************/// ***
+/**
+ * プロファイル情報を表示する際，ディスプレイ解像度より大きくならないように元画像を縮小します
+ *
+ *************************************************************************************************/
+void fittingDisplaySize(const cv::Mat &src, int profileHeight, cv::Mat &dst)
+{
+    // ウインドウのタイトルバーの高さ
+    const int WINDOW_TITLE_HEIGHT = 80;
+
+    // ディスプレイからはみ出ない画像サイズを計算する
+    const cv::Size displaySize = getDisplaySize();
+    const cv::Size fittingSize(displaySize.width - profileHeight,
+                               displaySize.height - profileHeight - WINDOW_TITLE_HEIGHT);
+    const cv::Point2d reduction(fittingSize.width / static_cast<double>(src.size().width),
+                                fittingSize.height / static_cast<double>(src.size().height));
+    const double reductionParcent = std::min(reduction.x, reduction.y);
+
+
+    // 縮小する必要が無いときはそのまま終了する
+    if (reductionParcent >= 1.0) {
+        dst = src.clone();
+        return;
+    }
+
+    // 元画像を縮小してディスプレイからはみ出ないようにする
+    cv::resize(src, dst, cv::Size(), reductionParcent, reductionParcent, cv::INTER_LANCZOS4);
 }
 
 } // namespace
@@ -92,11 +145,14 @@ int _tmain(int argc, _TCHAR* argv[])
         filename = std::wstring(argv[1]);
     }
 
-    cv::Mat im = cv::imread(cv::fromUtf16(filename));
 
     show_profile_image::ImageProfiler imageProfiler;
-    imageProfiler.setImage(im);
     imageProfiler.setCaption(createCaption(filename));
+
+    cv::Mat im = cv::imread(cv::fromUtf16(filename));
+    fittingDisplaySize(im, imageProfiler.profileHeight(), im);
+
+    imageProfiler.setImage(im);
     imageProfiler.show();
 
     return 0;

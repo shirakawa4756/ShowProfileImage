@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <tchar.h>
 
-
+#include <windows.h>
 
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください。
 #include <iomanip>
