@@ -10,6 +10,9 @@
     <ClCompile Include="..\..\src\image\image_profilter.cpp">
       <Filter>image_profiler\image</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\utility\open_file_dialog_winapi.cpp">
+      <Filter>image_profiler\utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -24,6 +27,9 @@
     <ClInclude Include="..\..\include\image\image_profilter.hpp">
       <Filter>image_profiler\image</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\utility\open_file_dialog_winapi.hpp">
+      <Filter>image_profiler\utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="main">
@@ -37,6 +43,9 @@
     </Filter>
     <Filter Include="image_profiler\image">
       <UniqueIdentifier>{6f9cde60-da8d-42f4-9819-823d52237b11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image_profiler\utility">
+      <UniqueIdentifier>{468341c3-bcab-4621-81db-4b9191b14244}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -6,9 +6,6 @@
 // Visual Studio の pragma comment(lib, ~) を利用してインストールした
 // Debug，Release モードとOpenCV に応じてほぼ自動的にすべてのライブラリを読み込みます．
 //
-// また，このヘッダファイルについてはパブリップドメインを宣言します.
-//
-//
 // Public Domain
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18,12 +15,33 @@
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include <opencv2/core/version.hpp>
 
+// バージョン番号を生成します
+//   e.g. OpenCV 2.4.10 -> 2410
 #define OPENCV_VERSION CVAUX_STR(CV_MAJOR_VERSION) CVAUX_STR(CV_MINOR_VERSION) CVAUX_STR(CV_SUBMINOR_VERSION)
+
+//
+// バージョン名，デバッグ/リリースモードに合わせて適当な静的ライブラリ名を生成します
+//
+// 例えば，OpenCV 2.4.10 でデバッグモード，入力文字列が opencv_core であれば，
+// opencv_core2410d.lib という文字列を生成します．
+// ここで，リリースモードであれば
+// opencv_core2410.lib という文字列を生成します．
+//
+// そのため，後述するとおり，
+//   #pragma comment(lib,OPENCV_LIBRARY_NAME("opencv_calib3d")) 
+//   #pragma comment(lib,OPENCV_LIBRARY_NAME("opencv_contrib")) 
+//   ～
+//
+// と使用するライブラリを列挙すればインストールされているバージョンに応じて
+// 適切な静的ライブラリを読み込むようになります．
+//
 #ifdef _DEBUG
 #define OPENCV_LIBRARY_NAME(str) str OPENCV_VERSION "d.lib"
 #else
 #define OPENCV_LIBRARY_NAME(str) str OPENCV_VERSION ".lib"
 #endif
+
+
 #pragma comment(lib,OPENCV_LIBRARY_NAME("opencv_calib3d"))      // opencv_contrib
 #pragma comment(lib,OPENCV_LIBRARY_NAME("opencv_contrib"))      // opencv_contrib
 #pragma comment(lib,OPENCV_LIBRARY_NAME("opencv_core"))         // opencv_core
@@ -46,6 +64,7 @@
 #   pragma comment(lib,OPENCV_LIBRARY_NAME("opencv_videostab"))    // opencv_videostab
 #endif
 
+
 #undef OPENCV_LIBRARY_NAME
 #endif // #if defined(_WIN32) || defined(_WIN64)
-#endif // #ifndef __CV_WAPPER_HPP__
+#endif // #ifndef OPENCV_LIBRARY_READER_HPP

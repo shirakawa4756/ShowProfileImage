@@ -10,17 +10,16 @@
 #include <stdio.h>
 #include <tchar.h>
 
-#include <windows.h>
+#include <Windows.h>
+#include <Commdlg.h>
+#pragma comment(lib, "Comdlg32.lib")
 
-// TODO: プログラムに必要な追加ヘッダーをここで参照してください。
+
 #include <iomanip>
 #include <string>
 #include <sstream>
 
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_library_reader.hpp>
 
-
-// コンパイル済みヘッダを使用することを宣言します
 #define USE_PRE_COMPLIE_HEADER

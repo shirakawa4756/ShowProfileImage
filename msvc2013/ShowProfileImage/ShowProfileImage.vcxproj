@@ -86,11 +86,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\image\image_profilter.hpp" />
     <ClInclude Include="..\..\include\opencv2\opencv_library_reader.hpp" />
+    <ClInclude Include="..\..\include\utility\open_file_dialog_winapi.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\image\image_profilter.cpp" />
+    <ClCompile Include="..\..\src\utility\open_file_dialog_winapi.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

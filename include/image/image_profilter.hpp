@@ -1,3 +1,38 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright(c) 2015, shirakawa4756@github.com
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met :
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// The views and conclusions contained in the software and documentation are those
+// of the authors and should not be interpreted as representing official policies,
+// either expressed or implied, of the FreeBSD Project.
+//
+//
+//
+// 読み込んだ画像の縦横プロファイルを表示します．
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifndef SHOW_PROFILE_IMAGE_IMAGE_PROFILTER_HPP
 #define SHOW_PROFILE_IMAGE_IMAGE_PROFILTER_HPP
 
@@ -181,32 +216,58 @@ private:
 
 
     /**
-     * ポインタで示している場所の情報を表示する際のフォント書体を指定します
-     *
+     * ポインタで示している場所の情報を表示する際のフォント書体を設定します
      */
     static const int PUT_TEXT_FONT_FACE = cv::FONT_HERSHEY_SIMPLEX;
 
 
     /**
-     *
+     * 表示するフォントのサイズを設定します
      */
     static const double PUT_TEXT_FONT_SIZE;
 
 
+    /**
+     * 表示するフォント太さを設定します
+     */
     static const int PUT_TEXT_THICKNESS = 1;
 
+
     /**
-     *
+     * 表示するフォントの色を定義します
      */
     static const cv::Scalar PUT_TEXT_COLOR;
 
-    static const int DEFAULT_FONT_HEIGHT = 30;
 
+    /**
+     * 表示するフォントの行間を設定します
+     * 
+     * 行間をピクセル単位で指定します
+     */
+    static const int DEFAULT_LINE_HEIGHT = 30;
+
+
+    /**
+     * マウス位置の桁数を指定します
+     *
+     * 5桁になることは滅多にないので4桁に指定します.
+     */
     static const int MOUSE_POSITION_DEGIT = 4;
 
+
+    /**
+     * マウス位置の色情報を表示する際の桁数を設定します
+     *
+     * 8bit 画像を読み込みことを前提としているので 3桁分を指定します.
+     */
     static const int RGB_DEGIT = 3;
 
-    static const int PUT_TEXT_RGB_X_OFFSET = 28;
+
+    /**
+     * マウス位置の色情報を表示する位置の左マージンを指定します
+     *
+     */
+    static const int PUT_TEXT_RGB_MARGIN_LEFT = 28;
 
 
     /**
@@ -249,67 +310,69 @@ private:
 
 
     /**
-     * 水平方向のプロファイルを描写します
+     * 水平方向のプロファイルを描写します.
      */
     void drawProfileHorizontal();
 
 
     /**
-     *
+     * 水平方向のプロファイル線を描きます.
      */
     void drawProfileLineHorizontal(const cv::Mat &col);
 
 
     /**
-     *
+     * 垂直方向のプロファイルを表示します.
      */
     void drawProfileVertical();
 
 
     /**
-     *
+     * 垂直方向のプロファイルを描きます
      */
     void drawProfileLineVertical(const cv::Mat &col, const cv::Scalar color);
 
 
     /**
-     *
+     * 現在のマウス位置上に十字線を描きます
      */
     void drawMousePositionCrossLine();
 
 
     /**
+     * テキストを描写します.
      *
+     * マウス位置の座標とその色情報を示します
      */
     void drawText();
 
 
     /**
-     *
+     * 現在のマウス位置(画像座標)を表示します
      */
     void drawTextMousePosition();
 
 
     /**
-     *
+     * マウス位置のRGB値を表示します
      */
     void drawTextRGB();
 
 
     /**
-     *
+     * 青色(B)の値を表示します
      */
     void drawTextBlue(uchar blue);
 
 
     /**
-     *
+     * 緑色(R)の値を表示します
      */
     void drawTextRed(uchar red);
 
 
     /**
-     * 緑色
+     * 赤色(R)の値を表示します
      */
     void drawTextGreen(uchar green);
 
