@@ -318,7 +318,7 @@ private:
     /**
      * 水平方向のプロファイル線を描きます.
      */
-    void drawProfileLineHorizontal(const cv::Mat &col);
+    void drawProfileLineHorizontal(const cv::Mat &col, const cv::Scalar color);
 
 
     /**

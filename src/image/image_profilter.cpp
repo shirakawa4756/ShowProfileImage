@@ -62,7 +62,6 @@ const cv::Scalar ImageProfiler::PROFILE_LINE_STROKE_COLORS[3] = {
     CV_RGB(64, 160, 255), CV_RGB(64, 255, 64), CV_RGB(255, 64, 16)
 };
 
-
 const double ImageProfiler::PUT_TEXT_FONT_SIZE = 0.65;
 
 const cv::Scalar ImageProfiler::PUT_TEXT_COLOR = cv::Scalar::all(255);
@@ -139,27 +138,31 @@ void ImageProfiler::drawProfileHorizontal()
 {
     const cv::Mat &horizon = image_.row(nowMousePosition_.y);
 
-    cv::MatConstIterator_<cv::Vec3b> it = horizon.begin<cv::Vec3b>();
-    cv::MatConstIterator_<cv::Vec3b> end = horizon.end<cv::Vec3b>() - 1;
+    std::vector<cv::Mat> mv;
+    cv::split(horizon, mv);
 
+    for (std::vector<cv::Mat>::size_type i = 0; i < mv.size(); ++i)
+    {
+        drawProfileLineHorizontal(mv[i], PROFILE_LINE_STROKE_COLORS[i]);
+    }
+}
+
+
+void ImageProfiler::drawProfileLineHorizontal(const cv::Mat &horizon, const cv::Scalar color)
+{
     const double scale = profileHeight_ / static_cast<double>(UCHAR_MAX);
     const int    offset = image_.rows + MARGIN_PROFILE_HEIGHT;
 
-    int col = 0;
-    for (; it != end; ++it) {
-        const cv::Vec3b &color     = *it;
-        const cv::Vec3b &colorNext = *(it + 1);
-        for (int c = 0; c < 3; ++c) {
-            const int cs = static_cast<int>((UCHAR_MAX - color[c]) * scale + offset);
-            const int ce = static_cast<int>((UCHAR_MAX - colorNext[c]) * scale + offset);
+    cv::MatConstIterator_<uchar> it  = horizon.begin<uchar>();
+    cv::MatConstIterator_<uchar> end = horizon.end<uchar>() - 1;
 
-            cv::line(show_, 
-                     cv::Point(col, cs),cv::Point(col + 1, ce),
-                     PROFILE_LINE_STROKE_COLORS[c],
-                     lineWidthProfile_,
-                     8);
-        }
-        ++col;
+    for (int col = 0; it != end; ++it, ++col) {
+        const int startLevel = static_cast<int>((UCHAR_MAX - *it) * scale + offset);
+        const int endLevel   = static_cast<int>((UCHAR_MAX - *(it + 1)) * scale + offset);
+        const cv::Point start(col, startLevel);
+        const cv::Point end(col + 1, endLevel);
+
+        cv::line(show_, start, end, color, lineWidthProfile_, DEFAULT_PROFILE_LINE_NEIGHBORHOOD);
     }
 }
 
@@ -249,7 +252,6 @@ void ImageProfiler::drawTextMousePosition()
 void ImageProfiler::drawTextRGB()
 {
     cv::Vec3b point = image_.at<cv::Vec3b>(nowMousePosition_);
-
     drawTextBlue(point[0]);
     drawTextGreen(point[1]);
     drawTextRed(point[2]);
