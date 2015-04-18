@@ -113,6 +113,17 @@ public:
 
 
     /**
+     * プロファイルの高さをピクセル数で取得します．
+     *
+     * @return プロファイルの高さ
+     */
+    int profileHeight() const
+    {
+        return profileHeight_;
+    }
+
+
+    /**
      * 画像プロファイルを表示する Window の表題を取得します
      *
      * @return 表題名
