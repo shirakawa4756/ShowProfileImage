@@ -3,6 +3,8 @@
 // Copyright(c) 2015, shirakawa4756@github.com
 // All rights reserved.
 //
+// * 2 clause BSD license
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met :
 //
@@ -12,7 +14,7 @@
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
 //    and/or other materials provided with the distribution.
-//
+//   
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -24,9 +26,31 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// The views and conclusions contained in the software and documentation are those
-// of the authors and should not be interpreted as representing official policies,
-// either expressed or implied, of the FreeBSD Project.
+//
+// * 二条項BSDライセンス　和訳
+//
+// Copyright (c) 2015, shirakawa4756@github.com
+// All rights reserved.
+//
+// ソースコード形式かバイナリ形式か、変更するかしないかを問わず、
+// 以下の条件を満たす場合に限り、再頒布および使用が許可されます。
+//
+// 1. ソースコードを再頒布する場合、上記の著作権表示、本条件一覧、
+//    および下記免責条項を含めること。
+//
+// 2. バイナリ形式で再頒布する場合、頒布物に付属のドキュメント等の
+//    資料に、上記の著作権表示、本条件一覧、および下記免責条項を含
+//    めること。
+//
+// 本ソフトウェアは、著作権者およびコントリビューターによって「現状のまま」提供されており、
+// 明示黙示を問わず、商業的な使用可能性、および特定の目的に対する適合性に関する暗黙の保証
+// も含め、またそれに限定されない、いかなる保証もありません。
+// 著作権者もコントリビューターも、事由のいかんを問わず、損害発生の原因いかんを問わず、
+// かつ責任の根拠が契約であるか厳格責任であるか（過失その他の）不法行為であるかを問わず、
+// 仮にそのような損害が発生する可能性を知らされていたとしても、本ソフトウェアの使用に
+// よって発生した（代替品または代用サービスの調達、使用の喪失、データの喪失、利益の喪失、
+// 業務の中断も含め、またそれに限定されない）直接損害、間接損害、偶発的な損害、特別損害、
+// 懲罰的損害、または結果損害について、一切責任を負わないものとします。
 //
 //
 //
@@ -36,19 +60,23 @@
 #include "stdafx.h"
 #include "image/image_profilter.hpp"
 
-
 #ifndef USE_PRE_COMPLIE_HEADER
 #   include <iomanip>
 #   include <string>
 #   include <sstream>
-
+#
 #   include <opencv2/opencv.hpp>
 #   include <opencv2/opencv_library_reader.hpp>
 #endif
 
+#include "misc/string_convert.hpp"
+
 
 
 namespace show_profile_image {
+// 既定のウインドウ表題
+const std::string DEFAULT_CAPTION = "Profile";
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -70,38 +98,47 @@ const cv::Scalar ImageProfiler::PUT_TEXT_COLOR = cv::Scalar::all(255);
 ImageProfiler::ImageProfiler()
   : profileHeight_(DEFAULT_PROFILE_HEIGHT),
     lineWidthProfile_(DEFAULT_PROFILE_LINE_WIDTH),
-    fontHeight_(DEFAULT_LINE_HEIGHT)
+    fontHeight_(DEFAULT_LINE_HEIGHT),
+    caption_(DEFAULT_CAPTION)
 {
 }
 
 
 
-void ImageProfiler::cvImShowCallBackFunc(int, int x, int y, int, void* userdata)
+void ImageProfiler::cvImShowCallBackFunc(int event, int x, int y, int flags, void *imageProfilerPtr)
 {
-    cv::Point *point = static_cast<cv::Point*>(userdata);
-    point->x = x;
-    point->y = y;
+    ImageProfiler *profiler = static_cast<ImageProfiler*>(imageProfilerPtr);
+    profiler->updateWindowStatus(event, x, y, flags);
+}
+
+
+
+void ImageProfiler::updateWindowStatus(int , int x, int y, int )
+{
+    nowMousePosition_.x = x;
+    nowMousePosition_.y = y;
 }
 
 
 
 void ImageProfiler::show()
 {
-    const std::string windowName = cv::fromUtf16(caption_);
+    // ウインドウの更新間隔を 60 fps にする
+    static const int UPDATE_WINDOW_INTERVAL_60FPS = static_cast<int>(1000.0 / 60.0);
 
-    cv::namedWindow(windowName);
-    cv::setMouseCallback(windowName,
+    cv::namedWindow(caption_);
+    cv::setMouseCallback(caption_,
                          &ImageProfiler::cvImShowCallBackFunc, 
-                         static_cast<void*>(&nowMousePosition_));
+                         static_cast<void*>(this));
 
     int key = 0;
     while (tolower(key) != QUIT_KEY_SHOW_PROFILE) {
         createShowProfileImage();
 
-        cv::imshow(windowName, show_);
-        key = cv::waitKey(1000 / 60); // 60fps
+        cv::imshow(caption_, show_);
+        key = cv::waitKey(UPDATE_WINDOW_INTERVAL_60FPS);
     }
-    cv::destroyWindow(windowName);
+    cv::destroyWindow(caption_);
 }
 
 
@@ -267,7 +304,7 @@ void ImageProfiler::drawTextBlue(const uchar blue)
         << static_cast<int>(blue);
 
     const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
-        image_.rows + MARGIN_PROFILE_HEIGHT + 2 * fontHeight_);
+                      image_.rows + MARGIN_PROFILE_HEIGHT + 2 * fontHeight_);
     putText(ss.str(), p);
 }
 
@@ -281,7 +318,7 @@ void ImageProfiler::drawTextGreen(const uchar green)
         << static_cast<int>(green);
 
     const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
-        image_.rows + MARGIN_PROFILE_HEIGHT + 3 * fontHeight_);
+                      image_.rows + MARGIN_PROFILE_HEIGHT + 3 * fontHeight_);
     putText(ss.str(), p);
 }
 
@@ -295,7 +332,7 @@ void ImageProfiler::drawTextRed(const uchar red)
        << static_cast<int>(red);
 
     const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
-        image_.rows + MARGIN_PROFILE_HEIGHT + 4 * fontHeight_);
+                      image_.rows + MARGIN_PROFILE_HEIGHT + 4 * fontHeight_);
     putText(ss.str(), p);
 }
 
