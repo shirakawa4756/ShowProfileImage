@@ -113,34 +113,6 @@ public:
 
 
     /**
-     * プロファイルの高さをピクセル数で取得します．
-     *
-     * @return プロファイルの高さ
-     */
-    int profileHeight() const
-    {
-        return profileHeight_;
-    }
-
-
-    /**
-     * プロファイルの高さを指定します.
-     *
-     * プロファイルをどの程度の高さで表示するか指定します．
-     * 高ければ高いほど細かく表示されますが，プロファイル領域が大きくなります．
-     *
-     * ただし，既定の最小高さ(MIN_PROFILE_HEIGHT) 以下には指定できません．
-     *
-     * @param profileHeight プロファイルの高さ [px]
-     *
-     */
-    void setProfileHeight(int profileHeight)
-    {
-        profileHeight_ = std::max(MIN_PROFILE_HEIGHT, profileHeight);
-    }
-
-
-    /**
      * 画像プロファイルを表示する Window の表題を取得します
      *
      * @return 表題名
