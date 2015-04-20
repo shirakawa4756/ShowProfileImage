@@ -61,8 +61,14 @@
 
 #include <algorithm>
 #include <string>
+#include <memory>
 
 #include <opencv2/core/core.hpp>
+
+
+#include "image/image_processing_command.hpp"
+
+
 
 namespace show_profile_image {
 /*******************************************************************************************/// ***
@@ -101,6 +107,12 @@ class ImageProfiler
 {
 public:
     /**
+     * キーを押すと発動する画像処理のリスト
+     */
+    typedef std::map<int, ImageProcessingCommandPtr> ImageProcessingCommandList;
+
+
+    /**
      * コンストラクタ
      */
     ImageProfiler();
@@ -110,6 +122,12 @@ public:
      * プロファイルを表示する画面を表示させます
      */
     void show();
+
+
+    /**
+     *　画像処理
+     */
+    void addImageProcessingCommand(int key, ImageProcessingCommandPtr commandPtr);
 
 
     /**
@@ -154,6 +172,7 @@ public:
     void setImage(const cv::Mat &image)
     {
         image_ = image;
+        target_ = image.clone();
     }
 
 
@@ -289,6 +308,12 @@ private:
 
 
     /**
+     * 画像処理リストを初期化する
+     */
+    void initializeImageProcessingCommandList();
+
+
+    /**
      * プロファイルウインドウのマウスやキーボードの状態を更新し(受け取り)ます
      *
      * 実際には，cvImShowCallBackFunc から各引数が丸投げされます
@@ -403,6 +428,13 @@ private:
     void putText(const std::string &text, const cv::Point &point);
 
 
+
+    /**
+     * 画像処理コマンドを検索して返します
+     */
+    ImageProcessingCommandPtr findImageProcessingCommand(int key);
+
+
     /**
      * window の表示名を示します
      */
@@ -424,6 +456,12 @@ private:
 
 
     /**
+     * プロファイルを表示する対象画像
+     */
+    cv::Mat target_;
+
+
+    /**
      * プロファイルを含めた表示する画像を示します
      */
     cv::Mat show_;
@@ -435,6 +473,12 @@ private:
      * cv::imshow で表示された画像に対しマウスポインタがどの座標を指しているのか保存します．
      */
     cv::Point nowMousePosition_;
+
+
+    /**
+     * shift キーを押したときのホールド位置を保持します
+     */
+    cv::Point holdMousePosition_;
 
 
     /**
@@ -453,6 +497,18 @@ private:
      * フォントの高さを示します
      */
     int fontHeight_;
+
+
+    /**
+     * 以前に shift-key を押したか?
+     */
+    bool isPreviousPressShiftKey_;
+
+
+    /**
+     * コマンドリスト
+     */
+    ImageProcessingCommandList imageProcessingCommandList_;
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

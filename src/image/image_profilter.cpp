@@ -74,6 +74,56 @@
 
 
 namespace show_profile_image {
+class DeepCopy : public ImageProcessingCommand
+{
+public:
+    /**
+    * コンストラクタ
+    */
+    DeepCopy() : kernelSize_(DEFAULT_KERNEL_SIZE) {}
+
+
+    /**
+    * デストラクタ
+    */
+    virtual ~DeepCopy() {}
+
+
+    /**
+    * ボックスフィルタを施します
+    */
+    void operator()(const cv::Mat &src, cv::Mat &dst) const
+    {
+        src.copyTo(dst);
+    }
+
+
+    /**
+     * カーネルサイズを取得します
+     */
+    virtual int kernelSize() const
+    {
+        return kernelSize_;
+    }
+
+
+    /**
+    * カーネルサイズを設定します
+    */
+    virtual void setKernelSize(int kernel)
+    {
+        kernelSize_ = kernel;
+    }
+
+
+private:
+    /**
+     * カーネルサイズ
+     */
+    int kernelSize_;
+};
+
+
 // 既定のウインドウ表題
 const std::string DEFAULT_CAPTION = "Profile";
 
@@ -90,19 +140,28 @@ const cv::Scalar ImageProfiler::PROFILE_LINE_STROKE_COLORS[3] = {
     CV_RGB(64, 160, 255), CV_RGB(64, 255, 64), CV_RGB(255, 64, 16)
 };
 
-const double ImageProfiler::PUT_TEXT_FONT_SIZE = 0.65;
+const double ImageProfiler::PUT_TEXT_FONT_SIZE = 0.60;
 
 const cv::Scalar ImageProfiler::PUT_TEXT_COLOR = cv::Scalar::all(255);
 
 
 ImageProfiler::ImageProfiler()
-  : profileHeight_(DEFAULT_PROFILE_HEIGHT),
-    lineWidthProfile_(DEFAULT_PROFILE_LINE_WIDTH),
-    fontHeight_(DEFAULT_LINE_HEIGHT),
-    caption_(DEFAULT_CAPTION)
+  : profileHeight_          (DEFAULT_PROFILE_HEIGHT),
+    lineWidthProfile_       (DEFAULT_PROFILE_LINE_WIDTH),
+    fontHeight_             (DEFAULT_LINE_HEIGHT),
+    caption_                (DEFAULT_CAPTION),
+    isPreviousPressShiftKey_(false)
 {
+    initializeImageProcessingCommandList();
 }
 
+
+void ImageProfiler::initializeImageProcessingCommandList()
+{
+    addImageProcessingCommand('s', std::make_shared<DeepCopy>());
+    addImageProcessingCommand('b', std::make_shared<BoxFilter>());
+    addImageProcessingCommand('l', std::make_shared<LaplacianFilter>());
+}
 
 
 void ImageProfiler::cvImShowCallBackFunc(int event, int x, int y, int flags, void *imageProfilerPtr)
@@ -112,13 +171,30 @@ void ImageProfiler::cvImShowCallBackFunc(int event, int x, int y, int flags, voi
 }
 
 
-
-void ImageProfiler::updateWindowStatus(int , int x, int y, int )
+void ImageProfiler::updateWindowStatus(int, int x, int y, int pressModifierKey)
 {
-    nowMousePosition_.x = x;
-    nowMousePosition_.y = y;
-}
+    if (pressModifierKey & cv::EVENT_FLAG_SHIFTKEY) {
+        if (!isPreviousPressShiftKey_) {
+            holdMousePosition_.x = x;
+            holdMousePosition_.y = y;
+        }
 
+        isPreviousPressShiftKey_ = true;
+    } else {
+        isPreviousPressShiftKey_ = false;
+    }
+
+    if (!isPreviousPressShiftKey_) {
+        nowMousePosition_.x = x;
+        nowMousePosition_.y = y;
+    } else {
+        if (x != holdMousePosition_.x) {
+            nowMousePosition_.y = y;
+        } else if (y != holdMousePosition_.y) {
+            nowMousePosition_.x = x;
+        }
+    }
+}
 
 
 void ImageProfiler::show()
@@ -127,12 +203,17 @@ void ImageProfiler::show()
     static const int UPDATE_WINDOW_INTERVAL_60FPS = static_cast<int>(1000.0 / 60.0);
 
     cv::namedWindow(caption_);
-    cv::setMouseCallback(caption_,
-                         &ImageProfiler::cvImShowCallBackFunc, 
+    cv::setMouseCallback(caption_, 
+                         &ImageProfiler::cvImShowCallBackFunc,
                          static_cast<void*>(this));
 
     int key = 0;
     while (tolower(key) != QUIT_KEY_SHOW_PROFILE) {
+        ImageProcessingCommandPtr command = findImageProcessingCommand(key);
+        if (command != nullptr) {
+            (*command)(image_, target_);
+        }
+
         createShowProfileImage();
 
         cv::imshow(caption_, show_);
@@ -150,7 +231,7 @@ void ImageProfiler::createShowProfileImage()
     if (nowMousePosition_.x >= image_.cols - 1) return;
     if (nowMousePosition_.y >= image_.rows - 1) return;
 
-    drawProfileHorizontal(); 
+    drawProfileHorizontal();
     drawProfileVertical();
     drawMousePositionCrossLine();
     drawText();
@@ -164,22 +245,20 @@ void ImageProfiler::createProfileBaseImage()
     show_.create(size, CV_8UC3);
     show_ = PROFILE_LINE_BACKGROUND_COLOR;
 
-
-    cv::Mat src = show_(cv::Rect(0, 0, image_.cols, image_.rows));
-    image_.copyTo(src);
+    cv::Mat src = show_(cv::Rect(0, 0, target_.cols, target_.rows));
+    target_.copyTo(src);
 }
 
 
 
 void ImageProfiler::drawProfileHorizontal()
 {
-    const cv::Mat &horizon = image_.row(nowMousePosition_.y);
+    const cv::Mat &horizon = target_.row(nowMousePosition_.y);
 
     std::vector<cv::Mat> mv;
     cv::split(horizon, mv);
 
-    for (std::vector<cv::Mat>::size_type i = 0; i < mv.size(); ++i)
-    {
+    for (std::vector<cv::Mat>::size_type i = 0; i < mv.size(); ++i) {
         drawProfileLineHorizontal(mv[i], PROFILE_LINE_STROKE_COLORS[i]);
     }
 }
@@ -187,15 +266,15 @@ void ImageProfiler::drawProfileHorizontal()
 
 void ImageProfiler::drawProfileLineHorizontal(const cv::Mat &horizon, const cv::Scalar color)
 {
-    const double scale = profileHeight_ / static_cast<double>(UCHAR_MAX);
-    const int    offset = image_.rows + MARGIN_PROFILE_HEIGHT;
+    const double scale  = profileHeight_ / static_cast<double>(UCHAR_MAX);
+    const int    offset = target_.rows + MARGIN_PROFILE_HEIGHT;
 
-    cv::MatConstIterator_<uchar> it  = horizon.begin<uchar>();
+    cv::MatConstIterator_<uchar> it = horizon.begin<uchar>();
     cv::MatConstIterator_<uchar> end = horizon.end<uchar>() - 1;
 
     for (int col = 0; it != end; ++it, ++col) {
         const int startLevel = static_cast<int>((UCHAR_MAX - *it) * scale + offset);
-        const int endLevel   = static_cast<int>((UCHAR_MAX - *(it + 1)) * scale + offset);
+        const int endLevel = static_cast<int>((UCHAR_MAX - *(it + 1)) * scale + offset);
         const cv::Point start(col, startLevel);
         const cv::Point end(col + 1, endLevel);
 
@@ -207,13 +286,12 @@ void ImageProfiler::drawProfileLineHorizontal(const cv::Mat &horizon, const cv::
 
 void ImageProfiler::drawProfileVertical()
 {
-    cv::Mat vertical = image_.col(nowMousePosition_.x);
+    cv::Mat vertical = target_.col(nowMousePosition_.x);
 
     std::vector<cv::Mat> mv;
     cv::split(vertical, mv);
 
-    for (std::vector<cv::Mat>::size_type i = 0; i < mv.size(); ++i)
-    {
+    for (std::vector<cv::Mat>::size_type i = 0; i < mv.size(); ++i) {
         drawProfileLineVertical(mv[i], PROFILE_LINE_STROKE_COLORS[i]);
     }
 }
@@ -222,15 +300,15 @@ void ImageProfiler::drawProfileVertical()
 
 void ImageProfiler::drawProfileLineVertical(const cv::Mat &vertical, const cv::Scalar color)
 {
-    const double scale = profileHeight_ / static_cast<double>(UCHAR_MAX);
-    const int    offset = image_.cols + MARGIN_PROFILE_HEIGHT;
+    const double scale  = profileHeight_ / static_cast<double>(UCHAR_MAX);
+    const int    offset = target_.cols + MARGIN_PROFILE_HEIGHT;
 
-    cv::MatConstIterator_<uchar> it  = vertical.begin<uchar>();
+    cv::MatConstIterator_<uchar> it = vertical.begin<uchar>();
     cv::MatConstIterator_<uchar> end = vertical.end<uchar>() - 1;
 
     for (int row = 0; it != end; ++it, ++row) {
         const int startLevel = static_cast<int>((UCHAR_MAX - *it) * scale + offset);
-        const int endLevel   = static_cast<int>((UCHAR_MAX - *(it + 1)) * scale + offset);
+        const int endLevel = static_cast<int>((UCHAR_MAX - *(it + 1)) * scale + offset);
         const cv::Point start(startLevel, row);
         const cv::Point end(endLevel, row + 1);
 
@@ -243,19 +321,19 @@ void ImageProfiler::drawProfileLineVertical(const cv::Mat &vertical, const cv::S
 void ImageProfiler::drawMousePositionCrossLine()
 {
     cv::line(show_,
-             cv::Point(0, nowMousePosition_.y),
-             cv::Point(show_.cols, nowMousePosition_.y),
-             cv::Scalar::all(UCHAR_MAX),
-             lineWidthProfile_,
-             DEFAULT_PROFILE_LINE_NEIGHBORHOOD);
+        cv::Point(0, nowMousePosition_.y),
+        cv::Point(show_.cols, nowMousePosition_.y),
+        cv::Scalar::all(UCHAR_MAX),
+        lineWidthProfile_,
+        DEFAULT_PROFILE_LINE_NEIGHBORHOOD);
 
 
     cv::line(show_,
-             cv::Point(nowMousePosition_.x, 0),
-             cv::Point(nowMousePosition_.x, show_.rows),
-             cv::Scalar::all(UCHAR_MAX),
-             lineWidthProfile_,
-             DEFAULT_PROFILE_LINE_NEIGHBORHOOD);
+        cv::Point(nowMousePosition_.x, 0),
+        cv::Point(nowMousePosition_.x, show_.rows),
+        cv::Scalar::all(UCHAR_MAX),
+        lineWidthProfile_,
+        DEFAULT_PROFILE_LINE_NEIGHBORHOOD);
 
 }
 
@@ -273,22 +351,23 @@ void ImageProfiler::drawTextMousePosition()
 {
     std::stringstream ss;
     ss << "("
-       << std::setw(MOUSE_POSITION_DEGIT)
-       << nowMousePosition_.x
-       << ", "
-       << std::setw(MOUSE_POSITION_DEGIT)
-       << nowMousePosition_.y
-       << ")";
+        << std::setw(MOUSE_POSITION_DEGIT)
+        << nowMousePosition_.x
+        << ", "
+        << std::setw(MOUSE_POSITION_DEGIT)
+        << nowMousePosition_.y
+        << ")";
 
-    const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT, 
-                      image_.rows + MARGIN_PROFILE_HEIGHT + fontHeight_);
+    const cv::Point p(target_.cols + MARGIN_PROFILE_HEIGHT,
+                      target_.rows + MARGIN_PROFILE_HEIGHT + fontHeight_);
     putText(ss.str(), p);
 }
 
 
+
 void ImageProfiler::drawTextRGB()
 {
-    cv::Vec3b point = image_.at<cv::Vec3b>(nowMousePosition_);
+    cv::Vec3b point = target_.at<cv::Vec3b>(nowMousePosition_);
     drawTextBlue(point[0]);
     drawTextGreen(point[1]);
     drawTextRed(point[2]);
@@ -303,8 +382,8 @@ void ImageProfiler::drawTextBlue(const uchar blue)
         << std::setw(RGB_DEGIT)
         << static_cast<int>(blue);
 
-    const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
-                      image_.rows + MARGIN_PROFILE_HEIGHT + 2 * fontHeight_);
+    const cv::Point p(target_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
+                      target_.rows + MARGIN_PROFILE_HEIGHT + 2 * fontHeight_);
     putText(ss.str(), p);
 }
 
@@ -317,8 +396,8 @@ void ImageProfiler::drawTextGreen(const uchar green)
         << std::setw(RGB_DEGIT)
         << static_cast<int>(green);
 
-    const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
-                      image_.rows + MARGIN_PROFILE_HEIGHT + 3 * fontHeight_);
+    const cv::Point p(target_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
+                      target_.rows + MARGIN_PROFILE_HEIGHT + 3 * fontHeight_);
     putText(ss.str(), p);
 }
 
@@ -328,11 +407,11 @@ void ImageProfiler::drawTextRed(const uchar red)
 {
     std::stringstream ss;
     ss << "R: "
-       << std::setw(RGB_DEGIT)
-       << static_cast<int>(red);
+        << std::setw(RGB_DEGIT)
+        << static_cast<int>(red);
 
-    const cv::Point p(image_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
-                      image_.rows + MARGIN_PROFILE_HEIGHT + 4 * fontHeight_);
+    const cv::Point p(target_.cols + MARGIN_PROFILE_HEIGHT + PUT_TEXT_RGB_MARGIN_LEFT,
+                      target_.rows + MARGIN_PROFILE_HEIGHT + 4 * fontHeight_);
     putText(ss.str(), p);
 }
 
@@ -340,8 +419,29 @@ void ImageProfiler::drawTextRed(const uchar red)
 
 void ImageProfiler::putText(const std::string &text, const cv::Point &point)
 {
-    cv::putText(show_, text, point, PUT_TEXT_FONT_FACE, PUT_TEXT_FONT_SIZE,
-                PUT_TEXT_COLOR, PUT_TEXT_THICKNESS, CV_AA);
+    cv::putText(show_, text, point, 
+                PUT_TEXT_FONT_FACE, 
+                PUT_TEXT_FONT_SIZE,
+                PUT_TEXT_COLOR, 
+                PUT_TEXT_THICKNESS,
+                CV_AA);
+}
+
+
+
+void ImageProfiler::addImageProcessingCommand(int key, ImageProcessingCommandPtr commandPtr)
+{
+    imageProcessingCommandList_.insert(ImageProcessingCommandList::value_type(key, commandPtr));
+}
+
+
+ImageProcessingCommandPtr ImageProfiler::findImageProcessingCommand(const int key)
+{
+    ImageProcessingCommandList::iterator it = imageProcessingCommandList_.find(key);
+    if (it == imageProcessingCommandList_.end()) {
+        return ImageProcessingCommandPtr(NULL);
+    }
+    return it->second;
 }
 
 } // namespace show_profile_image

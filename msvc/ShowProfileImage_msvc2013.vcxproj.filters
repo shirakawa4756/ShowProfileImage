@@ -32,6 +32,9 @@
     <ClInclude Include="..\include\utility\open_file_dialog_winapi.hpp">
       <Filter>show_profile_image</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\image\image_processing_command.hpp">
+      <Filter>show_profile_image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -40,10 +43,10 @@
     <ClCompile Include="main.cpp">
       <Filter>main</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\image\image_profilter.cpp">
+    <ClCompile Include="..\src\utility\open_file_dialog_winapi.cpp">
       <Filter>show_profile_image</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\utility\open_file_dialog_winapi.cpp">
+    <ClCompile Include="..\src\image\image_profilter.cpp">
       <Filter>show_profile_image</Filter>
     </ClCompile>
   </ItemGroup>

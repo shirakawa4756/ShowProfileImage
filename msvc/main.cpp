@@ -170,6 +170,54 @@ void fittingDisplayImageSize(const cv::Mat &src, int profileHeight, cv::Mat &dst
     cv::resize(src, dst, cv::Size(), reductionParcent, reductionParcent, cv::INTER_LANCZOS4);
 }
 
+
+
+/*******************************************************************************************/// ***
+/**
+ * メディアンフィルタを施す関数オブジェクトを定義します
+ *
+ * プロファイル表示しているとき，特定のキーを押すとメディアンフィルタを施すように
+ * ImageProcessingCommand を継承したメディアンフィルタの関数オブジェクトを定義します．
+ *
+ *************************************************************************************************/
+class MedianFilter : public show_profile_image::ImageProcessingCommand
+{
+public:
+    MedianFilter()
+      : kernelSize_(show_profile_image::DEFAULT_KERNEL_SIZE)
+    {
+    }
+
+
+    virtual ~MedianFilter()
+    {
+    }
+
+
+    virtual void operator()(const cv::Mat &src, cv::Mat &dst) const
+    {
+        cv::medianBlur(src, dst, kernelSize_);
+    }
+
+
+    virtual int kernelSize() const
+    {
+        return kernelSize_;
+    }
+
+
+    virtual void setKernelSize(int kernel)
+    {
+        kernelSize_ = kernel;
+    }
+
+
+private:
+    int kernelSize_;
+};
+
+
+
 } // namespace
 
 
@@ -186,15 +234,19 @@ int _tmain(int argc, _TCHAR* argv[])
         filename = std::wstring(argv[1]);
     }
 
+
+
     ImageProfiler imageProfiler;
     imageProfiler.setCaption(toString(createCaption(filename)));
+
+    // m キーを押したとき，メディアンフィルタを施す
+    imageProfiler.addImageProcessingCommand('m', std::make_shared<MedianFilter>());
 
     cv::Mat im = cv::imread(toString(filename));
     fittingDisplayImageSize(im, imageProfiler.profileHeight(), im);
 
     imageProfiler.setImage(im);
     imageProfiler.show();
-
     return 0;
 }
 
