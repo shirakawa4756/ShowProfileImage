@@ -1,0 +1,11 @@
+#
+# .gitconfig
+#
+[color]
+    ui = auto
+    status = auto
+    diff = auto
+    branch = auto
+    grep = auto
+[include]
+    path = ~/.gitconfig.local

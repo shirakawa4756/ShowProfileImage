@@ -1,28 +1,83 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
+#
+# ~/.gitignote
+#
+## archive ##
+*.zip
+*.lzh
+*.tar.gz
+*.tgz
+*.bz2
+*.dmg
+
+## Compiled object files ##
 *.obj
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+## Compiled Dynamic libraries ##
 *.so
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
+## Compiled Static libraries ##
 *.lai
 *.la
 *.a
 *.lib
 
-# Executables
+## Executables ##
 *.exe
 *.out
 *.app
+
+## Windows ##
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+
+## version control system ##
+.git/
+.hg/
+.svn/
+
+## backup,log ##
+*~
+~*
+*.swp
+.swp.*
+*.tmp
+*.bak
+*.old
+*.log
+.cache/
+*.autosave
+
+## Vim ##
+*.un~
+Session.vim
+.netrwhist
+
+## eclipse ##
+.settings/
+.project
+.classpath
+.buildpath
+
+## XCode ##
+*.xcodeproj/*
+
+## MSVS ##
+*.sdf
+*.suo
+*.opensdf
+*.pdb
+*.pch
+*.ipch
+*.idb
+*.ilk
+*.lastbuildstate
+*.tlog
